@@ -1,6 +1,6 @@
 '''
 inputoutput.py
-A Class which contains all the low level input-output interfaces with the kinect device or saved recordings
+Contains all the low level input-output interfaces with the kinect device, saved recordings, or screen.
 Nick Crews
 2/22/16
 '''
@@ -9,6 +9,7 @@ import freenect
 import numpy as np
 import cv2
 import os
+import processing as prc
 
 class VideoSource:
 
@@ -51,22 +52,21 @@ class VideoSource:
 	def _k_bgr(self):
 		'''Get the current bgr frame from the Kinect'''
 		try:
-			video = freenect.sync_get_video(self.self.DEVICE_INDEX_INDEX)[0]
+			video = freenect.sync_get_video(0)[0]
 		except:
-			video = freenect.sync_get_video(self.DEVICE_INDEX)[0]
+			print 'bgr failed once'
+			video = freenect.sync_get_video(1)[0]
 		bgr = video[:, :, ::-1]  # RGB -> BGR
 		return bgr
 
 	def _k_depth(self):
 		'''Get the current depth frame from the Kinect'''
 		try:
-			depth = freenect.sync_get_depth(self.DEVICE_INDEX)[0]
-		except :
-			depth = freenect.sync_get_depth(self.DEVICE_INDEX)[0]
-		np.clip(depth, 0, 2**10 - 1, depth)
-		depth >>= 2
-		depth = depth.astype(np.uint8)
-		return depth
+			depth = freenect.sync_get_depth(0)[0]
+		except:
+			print 'depth failed once'
+			depth = freenect.sync_get_depth(1)[0]
+		return prc.pretty_depth(depth)
 
 	def _k_ir(self):
 		'''Get the current ir frame from the Kinect'''
@@ -94,6 +94,18 @@ class VideoSaver:
 
 		self.extension = '.png'
 
+	def clean_bgr(self):
+		for f in os.listdir(self.bgr_path):
+			os.remove(f)
+
+	def clean_depth(self):
+		for f in os.listdir(self.depth_path):
+			os.remove(f)
+
+	def clean_ir(self):
+		for f in os.listdir(self.ir_path):
+			os.remove(f)
+
 	def save_bgr(self, frame):
 		path = self.bgr_path + os.sep + str(self._bgr_count) + self.extension
 		cv2.imwrite(path, frame)
@@ -112,6 +124,10 @@ class VideoSaver:
 def show(img, title = 'FRAME'):
 	cv2.imshow(title, img)
 
+def check_for_quit():
+	if cv2.waitKey(1) == ord('q'):
+		exit()
+	return
 
 
 
