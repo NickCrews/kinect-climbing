@@ -1,15 +1,15 @@
 
-import video as vid
+import inputoutput as io
 import processing as prc
 import cv2
 
 
 
-src = vid.VideoSource()
+src = io.VideoSource()
 src.set_bgr_source('data/videos/rgb.mp4')
 src.set_depth_source('data/videos/depth1.mov')
 
-svr = vid.VideoSaver()
+svr = io.VideoSaver()
 
 cd = prc.ClimberDetector()
 
@@ -28,5 +28,5 @@ while (True):
 
 	# vid.show(contours)
 	# cv2.waitKey(0)
-	vid.show(prc.overlay(depth, contours))
+	io.show(prc.overlay(depth, contours))
 	cv2.waitKey(1)
