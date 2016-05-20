@@ -1,0 +1,14 @@
+in x, y
+
+depth:
+upper left: 92, 76
+upper right: 537, 92
+lower right: 605, 469
+lower left: 78, 461
+
+rgb:
+
+upper left: 121, 75
+upper right: 514, 97
+lower right: 567, 430
+lower left: 107, 415

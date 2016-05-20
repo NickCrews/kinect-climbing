@@ -5,94 +5,97 @@ Nick Crews
 2/22/16
 '''
 
+
+import processing as prc
 import freenect
 import numpy as np
+import matplotlib.pyplot as plt
 import cv2
 import os
-import processing as prc
+
 
 class VideoSource:
 
-	def __init__(self, bgr = 'KINECT', depth = 'KINECT', ir = 'KINECT'):
+	def __init__(self, bgr = 'KINECT', depth = 'KINECT', ir = 'KINECT', img_format = '%1d.png'):
+
 		# What are the sources for the three feeds? Can be the String 'KINECT', in which case will try to read from connected camera, or can be a cv2.VidoCapture object to read from
 		self.bgr = bgr
 		self.depth = depth
 		self.ir = ir
 
-		# The index of the active Kinect. We assume there's only one kinect connect
-		self.DEVICE_INDEX = 0
+		# what kind of images are we reading
+		self.image_format = img_format
 
 	def get_bgr(self):
 		if self.bgr == 'KINECT':
-			return self._k_bgr()
+			frame, timestamp = freenect.sync_get_video()
+			bgr = frame[:, :, ::-1]  # RGB -> BGR
+			return bgr
 		else:
-			return self.bgr.read()[1]
+			ret, img = self.bgr.read()
+			return img
 
 	def get_depth(self):
 		if self.depth == 'KINECT':
-			return self._k_depth()
+			frame, timestamp = freenect.sync_get_depth()
+			return frame
 		else:
-			return self.depth.read()[1]
+			ret, img = self.depth.read()
+			return img
 
 	def get_ir(self):
 		if self.ir == 'KINECT':
-			return self._k_ir()
+			frame, timestamp = freenect.sync_get_video(freenect.VIDEO_IR_10BIT)
+			return frame
 		else:
-			return self.ir.read()[1]
-		
-	def set_bgr_source(self, filepath):
-		self.bgr = cv2.VideoCapture(filepath)
+			ret, img = self.ir.read()
+			return img
+	
+	def set_bgr_source(self, directorypath):
+		if directorypath == 'KINECT':
+			self.bgr = 'KINECT'
+		else:
+			self.bgr = cv2.VideoCapture(directorypath + os.sep + self.image_format)
 
-	def set_depth_source(self, filepath):
-		self.depth = cv2.VideoCapture(filepath)
+	def set_depth_source(self, directorypath):
+		if directorypath == 'KINECT':
+			self.depth = 'KINECT'
+		else:
+			self.depth = cv2.VideoCapture(directorypath + os.sep + self.image_format)
 
-	def set_ir_source(self, filepath):
-		self.ir = cv2.VideoCapture(filepath)
-
-	def _k_bgr(self):
-		'''Get the current bgr frame from the Kinect'''
-		try:
-			video = freenect.sync_get_video(0)[0]
-		except:
-			print 'bgr failed once'
-			video = freenect.sync_get_video(1)[0]
-		bgr = video[:, :, ::-1]  # RGB -> BGR
-		return bgr
-
-	def _k_depth(self):
-		'''Get the current depth frame from the Kinect'''
-		try:
-			depth = freenect.sync_get_depth(0)[0]
-		except:
-			print 'depth failed once'
-			depth = freenect.sync_get_depth(1)[0]
-		return prc.pretty_depth(depth)
-
-	def _k_ir(self):
-		'''Get the current ir frame from the Kinect'''
-		try:
-			frame = freenect.sync_get_video(self.DEVICE_INDEX, freenect.VIDEO_IR_10BIT)[0]
-		except TypeError:
-			frame = freenect.sync_get_video(self.DEVICE_INDEX, freenect.VIDEO_IR_10BIT)[0]
-		np.clip(frame, 0, 2**10 - 1, frame)
-		frame >>= 2
-		frame = frame.astype(np.uint8)
-		return frame
+	def set_ir_source(self, directorypath):
+		if directorypath == 'KINECT':
+			self.ir = 'KINECT'
+		else:
+			self.ir = cv2.VideoCapture(directorypath + os.sep + self.image_format)
 
 class VideoSaver:
 	'''Class which handles writing video feeds'''
 
-	def __init__(self):
+	def __init__(self, bgr='bgr', depth='depth', ir='ir', ext='.png'):
 
-		self.bgr_path = 'out' + os.sep + 'bgr'
-		self.depth_path = 'out' + os.sep + 'depth'
-		self.ir_path = 'out' + os.sep + 'ir'
+		self.bgr_path = 'out' + os.sep + bgr
+		self.depth_path = 'out' + os.sep + depth
+		self.ir_path = 'out' + os.sep + ir
 
 		self._bgr_count = 0
 		self._depth_count = 0
 		self._ir_count = 0
 
-		self.extension = '.png'
+		self.extension = ext
+
+		# create the folders if they don't exist
+		for path in [self.bgr_path, self.depth_path, self.ir_path]:
+			if not os.path.exists(path):
+			    os.makedirs(path)
+			else:
+				for the_file in os.listdir(path):
+				    file_path = os.path.join(path, the_file)
+				    try:
+				        if os.path.isfile(file_path):
+				            os.unlink(file_path)
+				    except Exception as e:
+				        print e
 
 	def clean_bgr(self):
 		for f in os.listdir(self.bgr_path):
@@ -108,26 +111,43 @@ class VideoSaver:
 
 	def save_bgr(self, frame):
 		path = self.bgr_path + os.sep + str(self._bgr_count) + self.extension
-		cv2.imwrite(path, frame)
+		cv2.imwrite(path, frame, [cv2.IMWRITE_PNG_COMPRESSION, 9])
 		self._bgr_count += 1
 
 	def save_depth(self, frame):
 		path = self.depth_path + os.sep + str(self._depth_count) + self.extension
-		cv2.imwrite(path, frame)
+		cv2.imwrite(path, frame, [cv2.IMWRITE_PNG_COMPRESSION, 9])
 		self._depth_count += 1
 
 	def save_ir(self, frame):
 		path = self.ir_path + os.sep + str(self._ir_count) + self.extension
-		cv2.imwrite(path, frame)
+		cv2.imwrite(path, frame, [cv2.IMWRITE_PNG_COMPRESSION, 9])
 		self._ir_count += 1
 
-def show(img, title = 'FRAME'):
+def show(img, *kargs):
+	title = kargs[0] if len(kargs)==1 else 'DEFAULT'
 	cv2.imshow(title, img)
 
 def check_for_quit():
+	'''If the user recently pressed q, return True. Otherwise return False immediately'''
 	if cv2.waitKey(1) == ord('q'):
-		exit()
-	return
+		return True
+	return False
+
+def pause():
+	'''Wait for the user to press something. if 'q', return True. Else False'''
+	if cv2.waitKey(0) == ord('q'):
+		return True
+	return False
+
+def histogram(img, *kargs, **kwargs):
+	title = kargs[0] if len(kargs)==1 else 'DEFAULT'
+
+	plt.clf()
+	plt.hist(img.ravel(), bins = 56, range=(0, np.max(img)))
+	plt.draw()
+	plt.pause(.001)
+
 
 
 
