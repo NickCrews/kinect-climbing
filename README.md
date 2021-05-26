@@ -2,6 +2,8 @@
 
 Uses an Xbox Kinect, Python, NumPy, and OpenCV2 to detect climbers and holds on an indoor rock-climbing wall. You can see a detailed write up at https://nickcrews.weebly.com/virtuwall.html
 
+![Detected Climber](examples/climber_outline.mp4)
+
 ## Goal:
 
 I want to create an augmented reality climbing wall, similar to those shown in these videos. The first step of the project was to detect the climber and holds on the wall, and this is what I talk about here. Next year, I want to add in the projector, and begin to add interaction into the system.
