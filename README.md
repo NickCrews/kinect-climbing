@@ -2,7 +2,7 @@
 
 Uses an Xbox Kinect, Python, NumPy, and OpenCV2 to detect climbers and holds on an indoor rock-climbing wall. You can see a detailed write up at https://nickcrews.weebly.com/virtuwall.html
 
-![Detected Climber](examples/climber_outline.mp4)
+![Detected Climber](examples/climber_outline.png)
 
 ## Goal:
 
